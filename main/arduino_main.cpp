@@ -7,6 +7,9 @@
 
 #define IN1  16  // Control pin 1
 #define IN2  17  // Control pin 2
+#define IN3  18
+#define IN4  19
+
 
 extern ControllerPtr myControllers[BP32_MAX_GAMEPADS]; // BP32 library allows for up to 4 concurrent controller connections, but we only need 1
 
@@ -39,6 +42,9 @@ void foo(ControllerPtr myController) {
             analogWrite(IN1, 255);  // PWM signal
             digitalWrite(IN2, LOW); // Direction control
 
+            analogWrite(IN3, 255);  // PWM signal
+            digitalWrite(IN4, LOW); // Direction control
+
             delay(1000);  // Run for 1 second
 
             
@@ -49,6 +55,9 @@ void foo(ControllerPtr myController) {
             // Stop motor
             analogWrite(IN1, 0);
             digitalWrite(IN2, LOW);
+
+            analogWrite(IN3, 0);
+            digitalWrite(IN4, LOW);
 
             delay(1000); // Stop for 1 second
 
