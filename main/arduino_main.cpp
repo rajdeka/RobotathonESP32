@@ -3,12 +3,15 @@
 #include <Bluepad32.h>
 #include <uni.h>
 #include "controller_callbacks.h"
-
+#include <QTRSensors.h>
 
 #define IN1  16  // Control pin 1
 #define IN2  17  // Control pin 2
 #define IN3  18
 #define IN4  19
+
+QTRSensors qtr;
+uint16_t sensors[4];
 
 
 extern ControllerPtr myControllers[BP32_MAX_GAMEPADS]; // BP32 library allows for up to 4 concurrent controller connections, but we only need 1
@@ -75,12 +78,27 @@ void setup() {
     //Serial.begin(115200);
     pinMode(IN1, OUTPUT);
     pinMode(IN2, OUTPUT);
+
+    qtr.setTypeAnalog(); // or setTypeAnalog()
+    qtr.setSensorPins((const uint8_t[]) {33, 32, 35, 34}, 4); // pin numbers go in the curly brackets {}, and number of sensors in use goes after
+
+    // calibration sequence
+    for (uint8_t i = 0; i < 250; i++) { 
+        Console.printf("calibrating %d/250\n", i); // 250 is the number of calibrations recommended by manufacturer
+        qtr.calibrate(); 
+        delay(20);
+    }
+
 }
 
 void loop() {
 
     vTaskDelay(1); // Ensures WDT does not get triggered when no controller is connected
     BP32.update(); 
+
+    qtr.readLineBlack(sensors); // Get calibrated sensor values returned into sensors[]
+    Console.printf("S1: %d S2: %d S3: %d S4: %d\n", sensors[0], sensors[1], sensors[2], sensors[3]); //S1 is 1, S2 is 8
+    delay(250);
 
     for (auto myController : myControllers) { // Only execute code when controller is connected
         if (myController && myController->isConnected() && myController->hasData()) {        
@@ -90,4 +108,34 @@ void loop() {
 
         }
     }
+
+    if(sensors[1]>800 && sensors[2]>800) {
+        
+
+        // Spin motor
+        analogWrite(IN1, 255);  // PWM signal
+        digitalWrite(IN2, LOW); // Direction control
+
+        analogWrite(IN3, 255);  // PWM signal
+        digitalWrite(IN4, LOW); // Direction control
+
+        delay(1000);  // Run for 1 second
+
+            
+        
+    }
+    else {
+        Console.printf("Press button A!"); // Replace with whatever you want
+        // Stop motor
+        analogWrite(IN1, 0);
+        digitalWrite(IN2, LOW);
+
+        analogWrite(IN3, 0);
+        digitalWrite(IN4, LOW);
+
+        delay(1000); // Stop for 1 second
+
+        vTaskDelay(1); // Yield CPU to not starve other ESP32 processes and cause WDT reset
+    }
+
 }
